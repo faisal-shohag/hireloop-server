@@ -25,25 +25,25 @@ async function run() {
   try {
     // await client.connect();
     const db = client.db("hireloop2");
-    const JWKS_db = (await db.collection("jwks").find().toArray())[0];
-    const verifyToken = async (req, res, next) => {
-      const authHeader = req?.headers.authorization;
-      if (!authHeader) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const token = authHeader.split(" ")[1];
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    // const JWKS_db = (await db.collection("jwks").find().toArray())[0];
+    // const verifyToken = async (req, res, next) => {
+    //   const authHeader = req?.headers.authorization;
+    //   if (!authHeader) {
+    //     return res.status(401).json({ message: "Unauthorized" });
+    //   }
+    //   const token = authHeader.split(" ")[1];
+    //   if (!token) {
+    //     return res.status(401).json({ message: "Unauthorized" });
+    //   }
 
-      try {
-        const { payload } = await jwtVerify(token, JWKS_db);
-        console.log(payload);
-        next();
-      } catch (error) {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-    };
+    //   try {
+    //     const { payload } = await jwtVerify(token, JWKS_db);
+    //     console.log(payload);
+    //     next();
+    //   } catch (error) {
+    //     return res.status(403).json({ message: "Forbidden" });
+    //   }
+    // };
     const companyCollection = db.collection("companies");
     const jobCollection = db.collection("jobs")
 
@@ -110,7 +110,7 @@ async function run() {
 
     //get jobs by specific company 
     
-    app.get("/jobs/company/:companyId", verifyToken, async (req, res) => {
+    app.get("/jobs/company/:companyId", async (req, res) => {
       const { companyId } = req.params;
       const result = await jobCollection
         .find({
