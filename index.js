@@ -45,9 +45,7 @@ async function run() {
     //   }
     // };
     const companyCollection = db.collection("companies");
-    const jobCollection = db.collection("jobs")
-
-
+    const jobCollection = db.collection("jobs");
 
     // Recruiter apis
     app.post("/company", async (req, res) => {
@@ -79,7 +77,7 @@ async function run() {
       const job = req.body;
       const result = await jobCollection.insertOne({
         ...job,
-        company: new ObjectId(job.company)
+        company: new ObjectId(job.company),
       });
       res.json(result);
     });
@@ -87,29 +85,76 @@ async function run() {
     //get jobs by user Id
     app.get("/my-jobs/:userEmail", async (req, res) => {
       const { userEmail } = req.params;
-      const result = await jobCollection.find({userEmail}).toArray()
-      res.json(result);
-    })
-
-
-    //get a particular job with company look up
-    app.get("/jobs/:jobId", async (req, res) => {
-      const { jobId } = req.params;
-      const result = await jobCollection.aggregate([
-        {$match: {_id: new ObjectId(jobId)}},
-        {$lookup: {
-            from: "companies",
-            localField: "company",
-            foreignField: "_id",
-            as: "companyInfo"
-        }}
-      ]).toArray();
+      const result = await jobCollection.find({ userEmail }).toArray();
       res.json(result);
     });
 
+    //get all jobs using find
+    app.get("/jobs", async (req, res) => {
+      const { jobTitle, type = "" } = req.query;
+      let query = {};
+      if (jobTitle) {
+        query.jobTitle = { $regex: jobTitle, $options: "i" };
+      }
+      //filter with type
+      if (type) {
+        query.jobType = type;
+      }
 
-    //get jobs by specific company 
-    
+      const result = await jobCollection.find(query).toArray();
+      res.json(result);
+    });
+
+    //search jobs by title
+    app.get("/jobs/search", async (req, res) => {
+      const { jobTitle } = req.query;
+      const result = await jobCollection
+        .find({
+          jobTitle: { $regex: jobTitle, $options: "i" },
+        })
+        .toArray();
+      res.json(result);
+    });
+
+    //get 5 jobs for home page
+    app.get("/jobs/homepage", async (req, res) => {
+      const result = await jobCollection.find().limit(5).toArray();
+      res.json(result);
+    });
+
+    //------------------------
+    //get a particular job with company look up
+    app.get("/jobs/:jobId", async (req, res) => {
+      const { jobId } = req.params;
+      const result = await jobCollection
+        .aggregate([
+          { $match: { _id: new ObjectId(jobId) } },
+          {
+            $lookup: {
+              from: "companies",
+              localField: "company",
+              foreignField: "_id",
+              as: "companyInfo",
+            },
+          },
+        ])
+        .toArray();
+      res.json(result[0]);
+    });
+
+    //get approved companies
+    app.get("/approved-companies", async (req, res) => {
+      const { companyName } = req.query;
+      const query = { status: "approved" };
+      if (companyName) {
+        query.companyName = { $regex: companyName, $options: "i" };
+      }
+
+      const result = await companyCollection.find(query).toArray();
+      res.json(result);
+    });
+
+    //get jobs by specific company
     app.get("/jobs/company/:companyId", async (req, res) => {
       const { companyId } = req.params;
       const result = await jobCollection
