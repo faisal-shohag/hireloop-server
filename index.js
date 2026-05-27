@@ -183,7 +183,7 @@ async function run() {
         return res.status(400).json({ message: "Job ID is required" });
       }
 
-      if (user.plan === "free") {
+      if (user.plan != "pro") {
         return res
           .status(403)
           .json({ message: "Upgrade to Pro plan to apply for jobs" });
